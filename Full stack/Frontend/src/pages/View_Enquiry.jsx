@@ -1,94 +1,96 @@
-import { useState } from 'react';
-import { Card, CardBody, CardFooter, Heading, Text, Button, SimpleGrid, CardHeader, Avatar, Textarea } from '@chakra-ui/react';
+import { useState, useEffect } from 'react';
+import { Table, Tbody, Td, Th, Thead, Tr, Text, Button, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, Textarea } from '@chakra-ui/react';
 import SideBar from '../components/Side_Bar';
 import { adminlinks } from '../assets/constants/Side_Constants';
-
+import axios from 'axios';
 
 const View_Enquiry_Admin = () => {
-  const [enquiries, setEnquiries] = useState([
-    {enquiryId:1,course:'java',name:'john',desc:'View a summary of all your customers over the last month.'},
-    {enquiryId:2,course:'Node',name:'sabari',desc:'View a summary of all your customers over the last month.'},
-    {enquiryId:3,course:'Python',name:'vasan',desc:'View a summary of all your customers over the last month.'},
-    {enquiryId:4,course:'java',name:'vinoth',desc:'View a summary of all your customers over the last month.'},
-    {enquiryId:5,course:'React',name:'sanjeevi',desc:'View a summary of all your customers over the last month.'},
-    {enquiryId:6,course:'css',name:'alice',desc:'View a summary of all your customers over the last month.'},
-    {enquiryId:7,course:'c++',name:'bob',desc:'View a summary of all your customers over the last month.'},
-  ]);
-
+  const [enquiries, setEnquiries] = useState([]);
+  const [reply, setReply] = useState('');
   const [replyOpen, setReplyOpen] = useState({});
   const [selectedEnquiry, setSelectedEnquiry] = useState(null);
+  const token=localStorage.getItem('jwtToken');
+  useEffect(() => {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`; 
+    axios.get("http://localhost:8989/admin/getAllEnquries").then((response) => {
+      setEnquiries(response.data);
+    });
+  }, []);
+
+  const send = (enquiry) => {
+    const enq = { ...enquiry, reply: reply };
+    axios.put(`http://localhost:8989/user/updateEnquiry/${enquiry.enquiry_id}`, enq)
+      .then(() => {
+        setEnquiries(prevEnquiries => prevEnquiries.filter(item => item.enquiry_id !== enquiry.enquiry_id));
+        setReply('');
+        closeReplyBox();
+      })
+      .catch(error => console.error("Error sending reply:", error));
+  };
 
   const openReplyBox = (enquiryId) => {
     setSelectedEnquiry(enquiryId);
-    setReplyOpen((prev) => ({ ...prev, [enquiryId]: true }));
+    setReplyOpen(prev => ({ ...prev, [enquiryId]: true }));
   };
 
   const closeReplyBox = () => {
-    if (replyOpen[selectedEnquiry]) {
-      setEnquiries((prevEnquiries) => prevEnquiries.filter((enquiry) => enquiry.enquiryId !== selectedEnquiry));
-    }
-
+    setReplyOpen(prev => ({ ...prev, [selectedEnquiry]: false }));
     setSelectedEnquiry(null);
-    setReplyOpen((prev) => ({ ...prev, [selectedEnquiry]: false }));
   };
 
   return (
-    <div className='bg-gray-600'>
+    <div className='h-screen bg-gray-600'>
       <div className='fixed z-50'>
-        <SideBar links={{ studentlinks: adminlinks, currentlinks: 'View Enquiry' }} />
+        <SideBar links={{ studentlinks: adminlinks, currentlinks: 'View Enquiry', role: 'admin' }} />
       </div>
-      <Text className='text-white ml-64 text-2xl font-bold mb-5'>Enquiries,</Text>
-      <SimpleGrid marginLeft='64' spacing={10} columns={[1, 2]}>
-        {enquiries.map((enquiry) => (
-          <Card backgroundColor='gray.700' colorScheme='dark' key={enquiry.enquiryId}>
-            <CardHeader>
-              <div className='flex align-center items-center'>
-                <Avatar name={`${enquiry.name}`} src='https://bit.ly/broken-link' />
-                <Heading size='md' color='white' ml='2'>
-                  {enquiry.name}
-                </Heading>
-              </div>
-            </CardHeader>
-            <Heading size='xs' color='gray.400' ml='5'>
-              <span className='text-white'>Course Name: </span>
-              {enquiry.course}
-            </Heading>
-            <CardBody>
-              <Text color='white'>Enquiry description:</Text>
-              <Text color='gray.400'>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                {enquiry.desc}
-              </Text>
-              {replyOpen[enquiry.enquiryId] && (
-                <Textarea
-                  mt={3}
-                  placeholder='Type your reply here...'
-                  resize='vertical'
-                  color='white'
-                  onChange={(e) => console.log(e.target.value)}
-                />
-              )}
-            </CardBody>
-            <CardFooter alignItems='center' justifyContent='center'>
-              {!replyOpen[enquiry.enquiryId] && (
-                <Button colorScheme='teal' onClick={() => openReplyBox(enquiry.enquiryId)}>
-                  Reply
-                </Button>
-              )}
-              {replyOpen[enquiry.enquiryId] && (
-                <div>
-                  <Button colorScheme='red' onClick={closeReplyBox}>
-                    Cancel
-                  </Button>
-                  <Button colorScheme='teal' onClick={closeReplyBox} ml='10'>
-                    Send
-                  </Button>
-                </div>
-              )}
-            </CardFooter>
-          </Card>
-        ))}
-      </SimpleGrid>
+      <div className='ml-40 bg-gray-700'>
+      <Text className='text-white text-2xl font-bold mb-5'>Enquiries,</Text>
+      {enquiries.length !== 0 ? (
+        <Table mt={6} p={6}>
+          <Thead>
+            <Tr backgroundColor='gray.700' >
+              <Th color='white'>User Name</Th>
+              <Th color='white'>Course Name</Th>
+              <Th color='white'>Description</Th>
+              <Th color='white'>Actions</Th>
+            </Tr>
+          </Thead>
+          <Tbody>
+            {enquiries.map((enquiry, index) => (
+              <Tr backgroundColor={index % 2 === 0 ? 'gray.300' : 'gray.400'} key={enquiry.enquiry_id}>
+                <Td>{enquiry.user.user_name}</Td>
+                <Td className=' flex text-sm font-bold mt-1'><img width='30px' className='rounded mr-2'src={enquiry.courses.imageUrl}></img>{enquiry.courses.course_name}</Td>
+                <Td>{enquiry.description}</Td>
+                <Td>
+                  {!replyOpen[enquiry.enquiry_id] ? (
+                    <Button colorScheme='teal'size='xs' onClick={() => openReplyBox(enquiry.enquiry_id)}>Reply</Button>
+                  ) : (
+                    <Modal isOpen={replyOpen[enquiry.enquiry_id]} onClose={closeReplyBox}>
+                     <ModalOverlay bg='blackAlpha.600'
+          backdropFilter='blur(10px) hue-rotate(0deg)' />
+                      <ModalContent>
+                        <ModalHeader backgroundColor='gray.700' color='white' textAlign='center'>Reply to Enquiry</ModalHeader>
+                        <ModalBody backgroundColor='gray.700' color='white' textAlign='center'>
+                          <Textarea placeholder="Give Your Reply.........."value={reply} onChange={(e) => setReply(e.target.value)} />
+                        </ModalBody>
+                        <ModalFooter backgroundColor='gray.700' color='white' textAlign='center' justifyContent='space-around'>
+                          <Button colorScheme='red' size='sm' onClick={closeReplyBox}>Cancel</Button>
+                          <Button colorScheme='teal' size='sm' onClick={() => send(enquiry)} ml='3'>Send</Button>
+                        </ModalFooter>
+                      </ModalContent>
+                    </Modal>
+                  )}
+                </Td>
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      ) : (
+        <div className='bg-gray-600 h-full flex justify-center items-center'>
+          <h1 className='text-center text-white text-2xl'>No Enquiries Were Found Here...</h1>
+        </div>
+      )}
+      </div>
     </div>
   );
 };

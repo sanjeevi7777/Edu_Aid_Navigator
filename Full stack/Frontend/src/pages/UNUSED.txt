@@ -1,0 +1,142 @@
+ {/* <div className="relative mt-6">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 ">
+              <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                ></path>
+              </svg>
+            </span>
+
+            <input
+              type="text"
+              className="w-full py-2 pl-10 pr-4 text-gray-700 bg-white border rounded-md dark:bg-gray-900 dark:text-gray-300 dark:border-gray-600 focus:border-blue-400 dark:focus:border-blue-300 focus:ring-blue-300 focus:ring-opacity-40 focus:outline-none focus:ring"
+              placeholder="Search Courses"
+            />
+          </div> */}
+
+
+
+
+
+
+
+
+          import { useState ,useEffect} from 'react';
+import { Card, CardBody, CardFooter, Heading, Text, Button, SimpleGrid, CardHeader, Avatar, Textarea } from '@chakra-ui/react';
+import SideBar from '../components/Side_Bar';
+import { adminlinks } from '../assets/constants/Side_Constants';
+import axios from 'axios';
+
+const View_Enquiry_Admin = () => {
+  const [enquiries, setEnquiries] = useState([]);
+  const [reply,setReply]=useState('');
+  console.log(reply);
+  useEffect(() => {
+    axios.get("http://localhost:8989/admin/getAllEnquries").then((response) => {
+        setEnquiries(response.data);
+        console.log(response.data);
+    });
+}, []);
+    
+  const [replyOpen, setReplyOpen] = useState({});
+  console.log(replyOpen)
+  const [selectedEnquiry, setSelectedEnquiry] = useState(null);
+
+  const send=(enquiry)=>{
+    const enq=enquiry;
+    enq.reply=reply;
+    const id=enquiry.enquiry_id;
+    console.log(enq);
+    axios.put(`http://localhost:8989/user/updateEnquiry/${id}`,enq)
+    setEnquiries((prevEnquiries) => prevEnquiries.filter((item) => item.enquiry_id !== enquiry.enquiry_id));
+    // Reset reply state
+    setReply('');
+  }
+  const openReplyBox = (enquiryId) => {
+    setSelectedEnquiry(enquiryId);
+    setReplyOpen((prev) => ({ ...prev, [enquiryId]: true }));
+  };
+
+  const closeReplyBox = () => {
+    if (replyOpen[selectedEnquiry]) {
+      setEnquiries((prevEnquiries) => prevEnquiries.filter((enquiry) => enquiry.enquiryId !== selectedEnquiry));
+    }
+
+    setSelectedEnquiry(null);
+    setReplyOpen((prev) => ({ ...prev, [selectedEnquiry]: false }));
+  };
+
+  return (
+    <div className='h-screen bg-gray-600'>
+      <div className='fixed z-50'>
+        <SideBar links={{ studentlinks: adminlinks, currentlinks: 'View Enquiry' ,role:'admin'}} />
+      </div>
+      <Text className='text-white ml-40 text-2xl font-bold mb-5'>Enquiries,</Text>
+      <SimpleGrid marginLeft='40' spacing={10} columns={[1, 2]}>
+      {enquiries.length!=0?(
+      enquiries.map((enquiry) => (
+  // Check if enquiry.reply is not null before rendering the card
+  enquiry.reply === null && (
+    <Card backgroundColor='gray.700' colorScheme='dark' key={enquiry.enquiry_id}>
+      <CardHeader>
+        <div className='flex align-center items-center'>
+          <Avatar name={`${enquiry.user.user_name}`} src='https://bit.ly/broken-link' />
+          <Heading size='md' color='white' ml='2'>
+            {enquiry.user.user_name}
+          </Heading>
+        </div>
+      </CardHeader>
+      <Heading size='xs' color='gray.400' ml='5'>
+        <span className='text-white'>Course Name: </span>
+        {enquiry.courses.course_name}
+      </Heading>
+      <CardBody>
+        <Text color='white'>Enquiry description:</Text>
+        <Text color='gray.400'>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          {enquiry.description}
+        </Text>
+        {replyOpen[enquiry.enquiry_id] && (
+          <Textarea
+            mt={3}
+            placeholder={enquiry.reply}
+            resize='vertical'
+            color='white'
+            value={reply}
+            onChange={(e) => setReply(e.target.value)}
+          />
+        )}
+      </CardBody>
+      <CardFooter alignItems='center' justifyContent='center'>
+        {!replyOpen[enquiry.enquiry_id] && (
+          <Button colorScheme='teal' onClick={() => openReplyBox(enquiry.enquiry_id)}>
+            Reply
+          </Button>
+        )}
+        {replyOpen[enquiry.enquiry_id] && (
+          <div>
+            <Button colorScheme='red' onClick={closeReplyBox}>
+              Cancel
+            </Button>
+            <Button colorScheme='teal' onClick={() => send(enquiry)} ml='10'>
+              Send
+            </Button>
+          </div>
+        )}
+      </CardFooter>
+    </Card>
+  )
+))):(<div className='bg-gray-600 h-full flex justify-center items-center'>
+<h1 className='text-center text-white text-2xl'>No Enquiries Were Found Here...</h1>
+</div>
+)}
+      </SimpleGrid>
+    </div>
+  );
+};
+
+export default View_Enquiry_Admin;

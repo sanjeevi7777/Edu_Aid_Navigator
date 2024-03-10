@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from 'react';
 import {
     Box,
     Heading,
@@ -13,22 +14,29 @@ import NavBar from '../components/Nav_Bar';
 import image from '../assets/images/back.gif';
 import Footer from '../components/Footer';
 import { useNavigate } from 'react-router-dom';
-import React from 'react';
+import axios from 'axios';
+
 export default function CallToActionWithAnnotation() {
-    const color = localStorage.getItem('sitetheme');
-    const content=localStorage.getItem('sitecontent');
-    const contentheading=localStorage.getItem('sitecontentheading');
-    const isDarkMode = color === 'dark'
-    const gradientColor = isDarkMode
-        ? 'rgba(0,0,0,0.8), rgba(0,0,0,0.8)'
-        : 'rgba(0,0,0,0.2), rgba(0,0,0,0.2)';
-    const navigate = useNavigate();
-    React.useEffect(() => {
-        document.body.classList.add('overflow-y-hidden');
-        return () => {
-            document.body.classList.remove('overflow-y-hidden');
-        };
+    const [settings, setSettings] = useState(null); // Initialize settings with null
+    useEffect(() => {
+        axios.get("http://localhost:8989/api/v1/auth/admin/getSite")
+            .then((response) => setSettings(response.data))
+            .catch((error) => console.error("Error fetching settings:", error));
     }, []);
+    
+    const navigate = useNavigate();
+
+    // Check if settings is null or undefined, return null in that case
+    if (!settings) {
+        return null;
+    }
+
+    const content = settings[0].content;
+    const contentheading = settings[0].head;
+    const color = settings[0].theme;
+    const isDarkMode = color === 'dark';
+    const gradientColor = isDarkMode ? 'rgba(0,0,0,0.8), rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.2), rgba(0,0,0,0.2)';
+    
     return (
         <>
             <NavBar />
@@ -54,39 +62,24 @@ export default function CallToActionWithAnnotation() {
                             fontWeight={600}
                             fontSize={{ base: '5xl', sm: '4xl', md: '6xl' }}
                             lineHeight={'110%'}
-                            color={isDarkMode?'white':'black'} 
-                            >
-                            
+                            color={isDarkMode ? 'white' : 'black'}
+                        >
                             {contentheading}
                             <Text as={'span'} color={'teal.400'}>
                                 &nbsp;Edu_Aid
                             </Text>
                         </Heading>
                         <Text color={!isDarkMode ? 'black' : 'gray.100'}>
-                           {content}
-                           {/* Education is a transformative process that empowers individuals with knowledge, skills, and critical thinking abilities, fostering personal growth and societal advancement. It plays a pivotal role in shaping informed citizens, promoting equality, and driving innovation, ultimately contributing to the development of a more enlightened and prosperous world. */}
-
+                            {content}
+                             skills, and critical thinking abilities, fostering personal growth and societal advancement. It plays a pivotal role in shaping informed citizens, promoting equality, and driving innovation, ultimately contributing to the development of a more enlightened and prosperous world.
                         </Text>
-
                         <Stack
                             direction={'column'}
                             spacing={3}
                             align={'center'}
                             alignSelf={'center'}
-                            position={'relative'}>
-                            {/* <Button
-                colorScheme={'teal'}
-                bg={'teal.400'}
-                rounded={'full'}
-                px={6}
-                py={6}
-                fontSize={16}
-                _hover={{
-                  bg: 'teal.500',
-                }}
-                onClick={() => navigate('/camera')}>
-                Get Started
-              </Button> */}
+                            position={'relative'}
+                        >
                             <button onClick={() => navigate('/login')} className="cursor-pointer font-bold transition-all duration-200 py-2 px-4 rounded-full bg-teal-600 border border-transparent flex items-center text-base hover:bg-teal-500 active:transform active:scale-95">
                                 <span>Continue</span>
                                 <svg className="w-6 ml-2 transform transition-transform duration-300 ease-in-out hover:translate-x-2" width="34" height="34" viewBox="0 0 74 74" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -94,10 +87,6 @@ export default function CallToActionWithAnnotation() {
                                     <path className="transition-transform duration-300 ease-in-out" d="M25 35.5C24.1716 35.5 23.5 36.1716 23.5 37C23.5 37.8284 24.1716 38.5 25 38.5V35.5ZM49.0607 38.0607C49.6464 37.4749 49.6464 36.5251 49.0607 35.9393L39.5147 26.3934C38.9289 25.8076 37.9792 25.8076 37.3934 26.3934C36.8076 26.9792 36.8076 27.9289 37.3934 28.5147L45.8787 37L37.3934 45.4853C36.8076 46.0711 36.8076 47.0208 37.3934 47.6066C37.9792 48.1924 38.9289 48.1924 39.5147 47.6066L49.0607 38.0607ZM25 38.5L48 38.5V35.5L25 35.5V38.5Z" fill="black"></path>
                                 </svg>
                             </button>
-
-
-
-
                             <Box>
                                 <Icon
                                     as={Arrow}
@@ -113,7 +102,8 @@ export default function CallToActionWithAnnotation() {
                                     position={'absolute'}
                                     right={'-125px'}
                                     top={'-15px'}
-                                    transform={'rotate(10deg)'}>
+                                    transform={'rotate(10deg)'}
+                                >
                                     Starting at FREE
                                 </Text>
                             </Box>
@@ -137,4 +127,4 @@ const Arrow = createIcon({
             fill="currentColor"
         />
     ),
-})
+});

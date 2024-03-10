@@ -5,7 +5,7 @@ import { adminlinks } from '../assets/constants/Side_Constants';
 function Admin() {
     return ( <div>
         <div>
-        <SideBar links={{studentlinks:adminlinks,currentlinks:'Dashboard'}}/>
+        <SideBar links={{studentlinks:adminlinks,currentlinks:'Dashboard',role:'admin'}}/>
         </div>
        
     </div> );

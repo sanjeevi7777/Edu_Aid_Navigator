@@ -7,7 +7,7 @@ import { studentlinks } from '../assets/constants/Side_Constants';
 function User() {
     return ( <div>
         <div>
-            <SideBar links={{studentlinks:studentlinks,currentlinks:'Dashboard'}}/>
+            <SideBar links={{studentlinks:studentlinks,currentlinks:'Dashboard',role:'admin'}}/>
             
         </div>
        

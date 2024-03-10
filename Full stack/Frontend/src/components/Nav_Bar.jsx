@@ -33,7 +33,7 @@ export default function Navbar({back}) {
                   {open ? (
                     <p>hh</p>
                   ) : (
-                    <p>hellll</p>
+                    <p>he</p>
                   )}
                 </Disclosure.Button>
               </div>

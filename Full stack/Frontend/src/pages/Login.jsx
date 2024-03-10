@@ -1,34 +1,78 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Spinner } from '@chakra-ui/react';
+import { Spinner,useToast, } from '@chakra-ui/react';
 import Logo from '../assets/images/logo.png';
 import image from '../assets/images/back.gif';
-
+import { useDispatch } from 'react-redux';
+import { login } from '../features/userSlice';
+import axios from 'axios';
+// import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 function Login() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-
+  const [errorEmailMessage, setEmailErrorMessage] = useState('');
+  const [errorPasswordMessage, setPasswordErrorMessage] = useState('');
+  const dispatch = useDispatch();
+  const toast=useToast();
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if(email===''){
+        setEmailErrorMessage("*Enter Your Email");
+    }
+    if(password==''){
+      setPasswordErrorMessage("*Enter Your Password");
+    }
+    else{
+    dispatch(login({ username: email }));
+    
     setLoading(true);
-
-    // Simulating an asynchronous login request
     setTimeout(() => {
-      setLoading(false);
+        setLoading(false);
+        axios
+        .post('http://localhost:8989/api/v1/auth/authenticate', { email: email, password: password })
+        .then(async (response) => {
+          const token = response.data.token;
+          console.log(email)
+          console.log(token);
+          
+          localStorage.setItem('jwtToken', token);
+          if(email==='admin@gmail.com'){
+            localStorage.setItem('email', email); 
+            navigate('/admin/dashboard');
+          }
+          // Set Authorization header for subsequent requests
 
-      // Check the email and navigate accordingly
-      if (email === 'admin@gmail.com') {
-        navigate('/admin/dashboard');
-      } else if (email === 'student@gmail.com') {
-        navigate('/user/dashboard');
-      } else {
-        // Handle other cases or show an error message
-        setErrorMessage('Invalid email');
-      }
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;  
+      
+          const idResponse = await axios.get(`http://localhost:8989/user/getSignIn/${email}`);
+          localStorage.setItem('id', idResponse.data.user_id);
+          localStorage.setItem('email', idResponse.data.email); 
+          idResponse.data.status = 'active';
+          console.log(idResponse.data)
+          const statusResponse = await axios.post("http://localhost:8989/user/saveSignIn", idResponse.data);
+          navigate('/user/dashboard');
+          toast({
+            position: 'top-right',
+            title: 'Login Successfully',
+            description: 'You have successfully logged in.',
+            status: 'success',
+            duration: 5000,
+            variant: 'top-accent',
+            isClosable: true,
+          });
+        })
+        .catch((error) => {
+          setErrorMessage("Enter Valid Credentials");
+          console.log(error);
+        });
+      
+
     }, 2000);
+  }
   };
 
   return (
@@ -63,7 +107,7 @@ function Login() {
             </h1>
             <form className="space-y-4 md:space-y-6 px-4" action="#">
               <div>
-                <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                <label htmlFor="email" className="block mb-2 text-sm font-bold text-gray-900 dark:text-white">
                   Your email
                 </label>
                 <input
@@ -71,11 +115,12 @@ function Login() {
                   name="email"
                   id="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) =>{setEmailErrorMessage(""); setEmail(e.target.value)}}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-600 focus:border-primary-600 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                   placeholder="name@company.com"
                   required=""
                 />
+              <p className='text-red-600 text-xs'>{errorEmailMessage}</p>
               </div>
               <div>
                 <label htmlFor="password" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
@@ -86,11 +131,12 @@ function Login() {
                   name="password"
                   id="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {setPasswordErrorMessage("") ;setPassword(e.target.value)}}
                   placeholder="••••••••"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-600 focus:border-primary-600 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                   required=""
                 />
+                  <p className='text-red-600 text-xs'>{errorPasswordMessage}</p>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-start">

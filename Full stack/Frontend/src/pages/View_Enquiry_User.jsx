@@ -1,72 +1,61 @@
-import { useState } from 'react';
-import { Card, CardBody, CardFooter, Heading, Text, Button, SimpleGrid, CardHeader, Avatar, Textarea } from '@chakra-ui/react';
+import { useState, useEffect } from 'react';
+import { Table, Tbody, Td, Th, Thead, Tr, Text } from '@chakra-ui/react';
 import SideBar from '../components/Side_Bar';
 import { studentlinks } from '../assets/constants/Side_Constants';
+import axios from 'axios';
 
 const View_Enquiry_Admin = () => {
-    const [enquiries, setEnquiries] = useState([
-        { enquiryId: 1, course: 'java', name: 'john', desc: 'Whether this course is good.', reply: 'Yeah ,ofCourse.' },
-        { enquiryId: 2, course: 'Node', name: 'sabari', desc: 'How advance this course is.', reply: 'We will teach lot of things' },
-        { enquiryId: 3, course: 'Python', name: 'vasan', desc: 'Whether this course is good.', reply: 'Yeah ,ofCourse.' },
-        { enquiryId: 4, course: 'java', name: 'vinoth', desc: 'Whether this course is good.', reply: 'Yeah ,ofCourse.' },
-        { enquiryId: 5, course: 'React', name: 'sanjeevi', desc: 'Whether this course is good.', reply: 'Yeah ,ofCourse.' },
-        { enquiryId: 6, course: 'css', name: 'alice', desc: 'Whether this course is good.', reply: 'Yeah ,ofCourse.' },
-        { enquiryId: 7, course: 'c++', name: 'bob', desc: 'Whether this course is good.', reply: 'Yeah ,ofCourse.' },
-    ]);
+  const [enquiries, setEnquiries] = useState([]);
+  const id = localStorage.getItem('id');
+  const token = localStorage.getItem('jwtToken');
 
+  useEffect(() => {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`; 
+    axios.get(`http://localhost:8989/user/getEnquiry/${id}`).then((response) => {
+      setEnquiries(response.data);
+    });
+  }, []);
 
+  return (
+<div className='h-screen bg-gray-600'>
+      <div className='fixed z-50'>
+        <SideBar links={{ studentlinks: studentlinks, currentlinks: 'View Enquiry', role: 'admin' }} />
+      </div>
+      <div className='ml-40 bg-gray-700'>
+      <Text className='text-white text-2xl font-bold mb-5'>Enquiries,</Text>
+      {enquiries.length !== 0 ? (
+        <Table mt={6} p={6}>
+          <Thead>
+            <Tr backgroundColor='gray.700' >
 
+              <Th color='white'>Course Name</Th>
+              <Th color='white'>Description</Th>
+              <Th color='white'>Admin Reply</Th>
+              {/* <Th color='white'>Actions</Th> */}
+            </Tr>
+          </Thead>
+          <Tbody>
+            {enquiries.map((enquiry, index) => (
+              <Tr backgroundColor={index % 2 === 0 ? 'gray.300' : 'gray.400'} key={enquiry.enquiry_id}>
+                {/* <Td className=''><img src={enquiry.courses.imageurl}></img></Td> */}
+                {/* {console.log(enquiry.courses.imageUrl)} */}
+                <Td className=' flex text-sm font-bold'><img width='30px' className='rounded mr-2'src={enquiry.courses.imageUrl}></img>{enquiry.courses.course_name}</Td>
+                <Td>{enquiry.description}</Td>
+                <Td className='text-xs'>{!enquiry.reply? 'no reply' : enquiry.reply}</Td>
 
-    return (
-        <div className='bg-gray-600'>
-            <div className='fixed z-50'>
-                <SideBar links={{ studentlinks: studentlinks, currentlinks: 'View Enquiry' }} />
-            </div>
-            <Text className='text-white ml-64 text-2xl font-bold mb-5'>Recent Reply,</Text>
-            <SimpleGrid marginLeft='64' spacing={10} columns={[1, 2]}>
-                {enquiries.map((enquiry) => (
-                    <Card backgroundColor='gray.700' colorScheme='dark' key={enquiry.enquiryId}>
-                        <CardHeader>
-                            <div className='flex align-center items-center'>
-                                {/* <Avatar name={`${enquiry.name}`} src='https://bit.ly/broken-link' /> */}
-                                {/* <Heading size='md' color='white' ml='2'>
-                  {enquiry.name}
-                </Heading> */}
-                            </div>
-                        </CardHeader>
-                        <Heading size='md' color='gray.400' ml='5'>
-                            <span className='text-white'>Course Name: </span>
-                            {enquiry.course}
-                        </Heading>
-                        <CardBody>
-                                <Heading size='xs' color='white' mt='2'>Enquiry:</Heading>
-                            <div className='flex mt-5 align-center items-center '>
-
-                                <Avatar name="sanjeevi" size='xs' ></Avatar>
-                                <Text className='text-gray-400' ml='2'>you</Text>
-                            </div>
-                            <Text color='gray.400'>
-                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                {enquiry.desc}
-                            </Text>
-                                <Heading size='xs' color='white' mt='2'>Reply:</Heading>
-                            <div className='flex mt-5'>
-                                <Avatar name="john paul" size='xs'></Avatar>
-                                <Text className='text-gray-400' ml='2'>john paul</Text>
-                            </div>
-                            <Text color='gray.400'>
-                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                {enquiry.reply}
-                            </Text>
-                        </CardBody>
-                        <CardFooter alignItems='center' justifyContent='center'>
-
-                        </CardFooter>
-                    </Card>
-                ))}
-            </SimpleGrid>
+                
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      ) : (
+        <div className='bg-gray-600 h-full flex justify-center items-center'>
+          <h1 className='text-center text-white text-2xl'>No Enquiries Were Found Here...</h1>
         </div>
-    );
+      )}
+      </div>
+    </div>
+  );
 };
 
 export default View_Enquiry_Admin;
